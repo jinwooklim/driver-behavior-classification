@@ -33,7 +33,9 @@ class DataLoader:
             return input_array
 
         self.train_array = _attach_full_img_path_and_labeling(self.train_array)
+        self.train_array_len = len(self.train_array)
         self._val_array = _attach_full_img_path_and_labeling(self._val_array)
+        self._val_array_len = len(self._val_array)
 
         def _decode_img(img_path):
             img = tf.io.read_file(img_path)
@@ -56,15 +58,15 @@ class DataLoader:
 
         self.train_tf_dataset = tf.data.Dataset.from_tensor_slices(self.train_array)
         self.train_tf_dataset = self.train_tf_dataset.map(_parse_function, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        self.train_tf_dataset = self.train_tf_dataset.shuffle(len(self.train_array)) # 1000
-        self.train_tf_dataset = self.train_tf_dataset.repeat()
+        self.train_tf_dataset = self.train_tf_dataset.shuffle(self.train_array_len) # Shuffle all data
+        self.train_tf_dataset = self.train_tf_dataset.repeat(TRAINING_EPOCHS) # Epoch
         self.train_tf_dataset = self.train_tf_dataset.batch(self.BATCH_SIZE)
         self.train_tf_dataset = self.train_tf_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
         self.train_iter = self.train_tf_dataset.make_one_shot_iterator()
 
         self._val_tf_dataset = tf.data.Dataset.from_tensor_slices(self._val_array)
         self._val_tf_dataset = self._val_tf_dataset.map(_parse_function, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        self._val_tf_dataset = self._val_tf_dataset.batch(self.BATCH_SIZE)
+        self._val_tf_dataset = self._val_tf_dataset.batch(1)
         self._val_tf_dataset = self._val_tf_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
         self._val_iter = self._val_tf_dataset.make_one_shot_iterator()
 
