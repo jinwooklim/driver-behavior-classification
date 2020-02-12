@@ -17,8 +17,8 @@ img, labels = train_dataset.get_train_data()
 img_val, label_val = train_dataset.get_val_data()
 
 for epoch in range(TRAINING_EPOCHS):
+    iter = 0
     while True:
-        iter = 0
         try:
             # Fetch the dataset (tf.Tensor -> numpy array)
             _img, _label = sess.run([img, labels])
@@ -27,6 +27,7 @@ for epoch in range(TRAINING_EPOCHS):
             iter = iter + 1
             if(iter%100 == 0):
                 print('Epoch:', '%02d' % (epoch + 1), 'cost =', '{:.9f}'.format(cost))
+                i = 0
         except tf.errors.OutOfRangeError:
             _img_val, _label_val = sess.run([img_val, label_val])
             acc = model.get_accuracy(img_val, label_val)
