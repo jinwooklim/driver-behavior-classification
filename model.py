@@ -10,8 +10,10 @@ class ClassificationModel():
 
     def build_net(self):
         with tf.variable_scope(self.name):
-            self.build_vgg16()
-        self.cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.logits, labels=self.y))
+            # self.build_vgg16(trainable=True)
+            self.build_cnn()
+        # self.cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.logits, labels=self.y))
+        self.cost = tf.reduce_mean(tf.losses.softmax_cross_entropy(logits=self.logits, onehot_labels=self.y))
         self.optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(self.cost)
         correct_prediction = tf.equal(tf.argmax(self.logits, 1), tf.argmax(self.y, 1))
         self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -54,10 +56,27 @@ class ClassificationModel():
                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-5),
                                 padding='SAME', trainable=trainable, use_bias=True, name=name)
 
-    def fc(self, layer, size, name, trainable):
+    def fc(self, layer, size, name, trainable=True):
         return tf.layers.dense(layer, size, activation=tf.nn.relu,
                                trainable=trainable, kernel_initializer=tf.contrib.layers.xavier_initializer(),
                                use_bias=True, name=name)
+
+    def build_cnn(self):
+        self.x = tf.placeholder(tf.float32, [None, IMG_WIDTH, IMG_HEIGHT, 3])
+        self.y = tf.placeholder(tf.float32, [None, NUM_CLASSES])
+
+        layer1 = self.conv2d(self.x, num_filters=32, name='layer1', ksize=3, trainable=True)
+        layer1 = tf.layers.max_pooling2d(layer1, pool_size=2, strides=2)
+
+        layer2 = self.conv2d(layer1, num_filters=64, name='layer2', ksize=3, trainable=True)
+        layer2 = tf.layers.max_pooling2d(layer2, pool_size=2, strides=2)
+
+        layer3 = self.conv2d(layer2, num_filters=128, name='layer3', ksize=3, trainable=True)
+        layer3 = tf.layers.max_pooling2d(layer3, pool_size=2, strides=2)
+
+        dense1 = tf.contrib.layers.flatten(layer3)
+        dense1 = tf.layers.dense(dense1, units=256, activation=tf.nn.relu)
+        self.logits = tf.layers.dense(dense1, units=NUM_CLASSES)
 
     def do_prediction(self, x_test):
         return self.sess.run(self.logits, feed_dict={self.x: x_test})

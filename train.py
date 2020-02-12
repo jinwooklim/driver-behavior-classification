@@ -2,6 +2,7 @@ import tensorflow as tf
 from data_loader import DataLoader
 from model import ClassificationModel
 from config import *
+import cv2
 
 # Create tensorflow session
 sess = tf.Session()
@@ -22,11 +23,19 @@ for epoch in range(TRAINING_EPOCHS):
         try:
             # Fetch the dataset (tf.Tensor -> numpy array)
             _img, _label = sess.run([img, labels])
+            # print(_img.shape)
+            # print(_img[0].shape)
+            # print(_label)
+            # cv2.imshow("img", _img[0])
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
+            # exit()
             # Feed numpy array (data) To model's placeholder
             cost, _ = model.train(_img, _label)
             iter = iter + 1
             if(iter%100 == 0):
-                print('Epoch:', '%02d' % (epoch + 1), 'cost =', '{:.9f}'.format(cost))
+                acc = model.get_accuracy(_img, _label)
+                print('Epoch:', '%02d' % (epoch + 1), 'cost =', '{:.9f}'.format(cost), 'acc =', acc)
                 i = 0
         except tf.errors.OutOfRangeError:
             _img_val, _label_val = sess.run([img_val, label_val])
