@@ -10,17 +10,22 @@ class ClassificationModel():
 
     def build_net(self):
         with tf.variable_scope(self.name):
-            # self.build_vgg16(trainable=True)
+            # self.build_vgg16()
             self.build_cnn()
+        # cross-entropy
         # self.cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.logits, labels=self.y))
-        self.cost = tf.reduce_mean(tf.losses.softmax_cross_entropy(logits=self.logits, onehot_labels=self.y))
+        # sparse-cross-entropy
+        self.cost = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y))
+
         self.optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(self.cost)
-        correct_prediction = tf.equal(tf.argmax(self.logits, 1), tf.argmax(self.y, 1))
+        # correct_prediction = tf.equal(tf.argmax(self.logits, 1), tf.argmax(self.y, 1)) # for cross-entropy
+        correct_prediction = tf.equal(tf.argmax(self.logits, 1), self.y) # for sparse-cross-entropy
         self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-    def build_vgg16(self, trainable=True):
+    def build_vgg16(self, trainable=None):
         self.x = tf.placeholder(tf.float32, [None, IMG_WIDTH, IMG_HEIGHT, 3])
-        self.y = tf.placeholder(tf.float32, [None, NUM_CLASSES])
+        # self.y = tf.placeholder(tf.float32, [None, NUM_CLASSES]) # for cross-entropy
+        self.y = tf.placeholder(tf.float32, [None]) # for sparse-cross-entropy
 
         conv1_1 = self.conv2d(self.x, num_filters=64, name='conv1_1', trainable=trainable)
         conv1_2 = self.conv2d(conv1_1, num_filters=64, name='conv1_2', trainable=trainable)
@@ -63,7 +68,8 @@ class ClassificationModel():
 
     def build_cnn(self):
         self.x = tf.placeholder(tf.float32, [None, IMG_WIDTH, IMG_HEIGHT, 3])
-        self.y = tf.placeholder(tf.float32, [None, NUM_CLASSES])
+        # self.y = tf.placeholder(tf.float32, [None, NUM_CLASSES]) # for cross-entropy
+        self.y = tf.placeholder(tf.int64, [None]) # for sparse-cross-entropy
 
         layer1 = self.conv2d(self.x, num_filters=32, name='layer1', ksize=3, trainable=True)
         layer1 = tf.layers.max_pooling2d(layer1, pool_size=2, strides=2)

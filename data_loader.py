@@ -53,7 +53,8 @@ class DataLoader:
         def _parse_function(label_and_img_path):
             img = _decode_img(label_and_img_path[1])
             str = _decode_string(label_and_img_path[0])
-            label = tf.one_hot(str, self.NUM_CLASSES)
+            # label = tf.one_hot(str, self.NUM_CLASSES) # for cross-entropy
+            label = str # for sparse-cross-entropy
             return img, label
 
         self.train_tf_dataset = tf.data.Dataset.from_tensor_slices(self.train_array)
